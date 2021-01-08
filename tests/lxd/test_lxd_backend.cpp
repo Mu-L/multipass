@@ -57,7 +57,7 @@ const QString bridge_name{"mpbr0"};
 
 struct LXDBackend : public Test
 {
-    LXDBackend() : mock_network_access_manager{std::make_unique<NiceMock<mpt::MockNetworkAccessManager>>()}
+    LXDBackend() : mock_network_access_manager{std::make_unique<StrictMock<mpt::MockNetworkAccessManager>>()}
     {
         logger_scope.mock_logger->screen_logs(mpl::Level::error);
     }
@@ -78,7 +78,7 @@ struct LXDBackend : public Test
 
     mpt::MockLogger::Scope logger_scope = mpt::MockLogger::inject();
     mpt::TempDir data_dir;
-    std::unique_ptr<NiceMock<mpt::MockNetworkAccessManager>> mock_network_access_manager;
+    std::unique_ptr<StrictMock<mpt::MockNetworkAccessManager>> mock_network_access_manager;
     QUrl base_url{"unix:///foo@1.0"};
 };
 
@@ -102,8 +102,8 @@ TEST_F(LXDBackend, creates_project_and_network_on_healthcheck)
     bool profile_updated{false};
     bool network_created{false};
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([&project_created, &profile_updated, &network_created](auto, auto request, auto outgoingData) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillRepeatedly([&project_created, &profile_updated, &network_created](auto, auto request, auto outgoingData) {
             outgoingData->open(QIODevice::ReadOnly);
             auto data = outgoingData->readAll();
             auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
@@ -171,8 +171,8 @@ TEST_F(LXDBackend, factory_creates_valid_virtual_machine_ptr)
 {
     mpt::StubVMStatusMonitor stub_monitor;
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([](auto, auto request, auto outgoingData) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillRepeatedly([](auto, auto request, auto outgoingData) {
             outgoingData->open(QIODevice::ReadOnly);
             auto data = outgoingData->readAll();
             auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
@@ -219,8 +219,8 @@ TEST_F(LXDBackend, creates_in_stopped_state)
 
     bool vm_created{false};
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([&vm_created](auto, auto request, auto) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillRepeatedly([&vm_created](auto, auto request, auto) {
             auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
             auto url = request.url().toString();
 
@@ -259,8 +259,8 @@ TEST_F(LXDBackend, machine_persists_and_sets_state_on_start)
 
     bool start_called{false};
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([&start_called](auto, auto request, auto outgoingData) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillRepeatedly([&start_called](auto, auto request, auto outgoingData) {
             outgoingData->open(QIODevice::ReadOnly);
             auto data = outgoingData->readAll();
             auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
@@ -309,8 +309,8 @@ TEST_F(LXDBackend, machine_persists_and_sets_state_on_shutdown)
 
     bool vm_shutdown{false};
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([&vm_shutdown](auto, auto request, auto outgoingData) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillRepeatedly([&vm_shutdown](auto, auto request, auto outgoingData) {
             outgoingData->open(QIODevice::ReadOnly);
             auto data = outgoingData->readAll();
             auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
@@ -360,8 +360,8 @@ TEST_F(LXDBackend, machine_does_not_update_state_in_dtor)
 
     bool vm_shutdown{false}, stop_requested{false};
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([&vm_shutdown, &stop_requested](auto, auto request, auto outgoingData) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillRepeatedly([&vm_shutdown, &stop_requested](auto, auto request, auto outgoingData) {
             outgoingData->open(QIODevice::ReadOnly);
             auto data = outgoingData->readAll();
             auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
@@ -414,8 +414,8 @@ TEST_F(LXDBackend, does_not_call_stop_when_snap_refresh_is_detected)
 
     bool stop_requested{false};
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([&stop_requested](auto, auto request, auto outgoingData) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillRepeatedly([&stop_requested](auto, auto request, auto outgoingData) {
             outgoingData->open(QIODevice::ReadOnly);
             auto data = outgoingData->readAll();
             auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
@@ -461,8 +461,8 @@ TEST_F(LXDBackend, calls_stop_when_snap_refresh_does_not_exist)
 
     bool stop_requested{false};
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([&stop_requested](auto, auto request, auto outgoingData) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillRepeatedly([&stop_requested](auto, auto request, auto outgoingData) {
             outgoingData->open(QIODevice::ReadOnly);
             auto data = outgoingData->readAll();
             auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
@@ -546,8 +546,8 @@ TEST_F(LXDBackend, posts_expected_data_when_creating_instance)
 
     bool vm_created{false};
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([&vm_created, &expected_data](auto, auto request, auto outgoingData) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillRepeatedly([&vm_created, &expected_data](auto, auto request, auto outgoingData) {
             outgoingData->open(QIODevice::ReadOnly);
             auto data = outgoingData->readAll();
             auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
@@ -623,8 +623,8 @@ TEST_F(LXDBackend, returns_expected_backend_string)
                                  "  }"
                                  "}\n"};
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([&server_data](auto, auto request, auto) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillRepeatedly([&server_data](auto, auto request, auto) {
             auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
             auto url = request.url().toString();
 
@@ -693,8 +693,8 @@ TEST_F(LXDBackend, healthcheck_throws_when_untrusted)
                                     "  }"
                                     "}\n"};
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([&untrusted_data](auto, auto request, auto) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillRepeatedly([&untrusted_data](auto, auto request, auto) {
             auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
             auto url = request.url().toString();
 
@@ -716,8 +716,8 @@ TEST_F(LXDBackend, healthcheck_connection_refused_error_throws_with_expected_mes
 {
     const std::string exception_message{"Connection refused"};
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([&exception_message](auto...) -> QNetworkReply* {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillOnce([&exception_message](auto...) -> QNetworkReply* {
             throw mp::LocalSocketConnectionException(exception_message);
         });
 
@@ -735,8 +735,8 @@ TEST_F(LXDBackend, healthcheck_unknown_server_error_throws_with_expected_message
 {
     const std::string exception_message{"Unknown server"};
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([&exception_message](auto...) -> QNetworkReply* {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillOnce([&exception_message](auto...) -> QNetworkReply* {
             throw mp::LocalSocketConnectionException(exception_message);
         });
 
@@ -754,8 +754,8 @@ TEST_F(LXDBackend, returns_expected_network_info)
 {
     mpt::StubVMStatusMonitor stub_monitor;
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([](auto, auto request, auto outgoingData) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillRepeatedly([](auto, auto request, auto outgoingData) {
             outgoingData->open(QIODevice::ReadOnly);
             auto data = outgoingData->readAll();
             auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
@@ -795,8 +795,8 @@ TEST_F(LXDBackend, ssh_hostname_timeout_throws_and_sets_unknown_state)
 {
     mpt::StubVMStatusMonitor stub_monitor;
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([](auto, auto request, auto outgoingData) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillRepeatedly([](auto, auto request, auto outgoingData) {
             outgoingData->open(QIODevice::ReadOnly);
             auto data = outgoingData->readAll();
             auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
@@ -833,8 +833,8 @@ TEST_F(LXDBackend, no_ip_address_returns_unknown)
 {
     mpt::StubVMStatusMonitor stub_monitor;
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([](auto, auto request, auto outgoingData) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillRepeatedly([](auto, auto request, auto outgoingData) {
             outgoingData->open(QIODevice::ReadOnly);
             auto data = outgoingData->readAll();
             auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
@@ -868,7 +868,7 @@ TEST_F(LXDBackend, no_ip_address_returns_unknown)
 
 TEST_F(LXDBackend, lxd_request_timeout_aborts_and_throws)
 {
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _)).WillByDefault([](auto...) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _)).WillOnce([](auto...) {
         QByteArray data;
         auto reply = new mpt::MockLocalSocketReply(data);
         reply->setFinished(false);
@@ -885,7 +885,7 @@ TEST_F(LXDBackend, lxd_request_timeout_aborts_and_throws)
 
 TEST_F(LXDBackend, lxd_request_invalid_json_throws)
 {
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _)).WillByDefault([](auto, auto request, auto) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _)).WillOnce([](auto, auto request, auto) {
         auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
         auto url = request.url().toString();
         QByteArray invalid_json{"not json\r\n"};
@@ -903,8 +903,8 @@ TEST_F(LXDBackend, lxd_request_wrong_json_throws)
 {
     QByteArray invalid_json{"[]\r\n"};
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([&invalid_json](auto, auto request, auto) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillOnce([&invalid_json](auto, auto request, auto) {
             auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
             auto url = request.url().toString();
 
@@ -921,8 +921,8 @@ TEST_F(LXDBackend, unsupported_suspend_throws)
 {
     mpt::StubVMStatusMonitor stub_monitor;
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([](auto, auto request, auto outgoingData) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillRepeatedly([](auto, auto request, auto outgoingData) {
             outgoingData->open(QIODevice::ReadOnly);
             auto data = outgoingData->readAll();
             auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
@@ -952,7 +952,7 @@ TEST_F(LXDBackend, start_while_suspending_throws)
 {
     mpt::StubVMStatusMonitor stub_monitor;
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _)).WillByDefault([](auto, auto request, auto) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _)).WillRepeatedly([](auto, auto request, auto) {
         auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
         auto url = request.url().toString();
 
@@ -976,8 +976,8 @@ TEST_F(LXDBackend, start_while_frozen_unfreezes)
     mpt::StubVMStatusMonitor stub_monitor;
     bool unfreeze_called{false};
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([&unfreeze_called](auto, auto request, auto outgoingData) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillRepeatedly([&unfreeze_called](auto, auto request, auto outgoingData) {
             outgoingData->open(QIODevice::ReadOnly);
             auto data = outgoingData->readAll();
             auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
@@ -1015,8 +1015,8 @@ TEST_F(LXDBackend, start_while_running_does_nothing)
 
     bool put_called{false};
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([&put_called](auto, auto request, auto outgoingData) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillRepeatedly([&put_called](auto, auto request, auto outgoingData) {
             outgoingData->open(QIODevice::ReadOnly);
             auto data = outgoingData->readAll();
             auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
@@ -1057,7 +1057,7 @@ TEST_F(LXDBackend, shutdown_while_frozen_does_nothing_and_logs_info)
 {
     mpt::MockVMStatusMonitor mock_monitor;
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _)).WillByDefault([](auto, auto request, auto) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _)).WillRepeatedly([](auto, auto request, auto) {
         auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
         auto url = request.url().toString();
 
@@ -1090,8 +1090,8 @@ TEST_F(LXDBackend, ensure_vm_running_does_not_throw_starting)
 
     bool start_called{false};
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([&start_called](auto, auto request, auto outgoingData) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillRepeatedly([&start_called](auto, auto request, auto outgoingData) {
             outgoingData->open(QIODevice::ReadOnly);
             auto data = outgoingData->readAll();
             auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
@@ -1138,8 +1138,8 @@ TEST_F(LXDBackend, shutdown_while_starting_throws_and_sets_correct_state)
 
     bool stop_called{false}, start_called{false};
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([&stop_called, &start_called](auto, auto request, auto outgoingData) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillRepeatedly([&stop_called, &start_called](auto, auto request, auto outgoingData) {
             outgoingData->open(QIODevice::ReadOnly);
             auto data = outgoingData->readAll();
             auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
@@ -1199,8 +1199,8 @@ TEST_F(LXDBackend, start_failure_while_starting_throws_and_sets_correct_state)
     bool start_called{false};
     int running_returned{0};
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([&start_called, &running_returned](auto, auto request, auto outgoingData) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillRepeatedly([&start_called, &running_returned](auto, auto request, auto outgoingData) {
             outgoingData->open(QIODevice::ReadOnly);
             auto data = outgoingData->readAll();
             auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
@@ -1249,8 +1249,8 @@ TEST_F(LXDBackend, reboots_while_starting_does_not_throw_and_sets_correct_state)
     bool start_called{false}, reboot_simulated{false};
     int running_returned{0};
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([&start_called, &running_returned, &reboot_simulated](auto, auto request, auto outgoingData) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillRepeatedly([&start_called, &running_returned, &reboot_simulated](auto, auto request, auto outgoingData) {
             outgoingData->open(QIODevice::ReadOnly);
             auto data = outgoingData->readAll();
             auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
@@ -1298,8 +1298,8 @@ TEST_F(LXDBackend, current_state_connection_error_logs_warning_and_sets_unknown_
     mpt::StubVMStatusMonitor stub_monitor;
     const std::string exception_message{"Cannot connect to socket"};
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([&exception_message](auto...) -> QNetworkReply* {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillRepeatedly([&exception_message](auto...) -> QNetworkReply* {
             throw mp::LocalSocketConnectionException(exception_message);
         });
 
@@ -1320,8 +1320,8 @@ TEST_P(LXDInstanceStatusTestSuite, lxd_state_returns_expected_VirtualMachine_sta
     const auto status_data = GetParam().first;
     const auto expected_state = GetParam().second;
 
-    ON_CALL(*mock_network_access_manager, createRequest(_, _, _))
-        .WillByDefault([&status_data](auto, auto request, auto outgoingData) {
+    EXPECT_CALL(*mock_network_access_manager, createRequest(_, _, _))
+        .WillRepeatedly([&status_data](auto, auto request, auto outgoingData) {
             outgoingData->open(QIODevice::ReadOnly);
             auto data = outgoingData->readAll();
             auto op = request.attribute(QNetworkRequest::CustomVerbAttribute).toString();
